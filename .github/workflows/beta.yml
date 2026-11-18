@@ -48,24 +48,24 @@ jobs:
 
       # beta 用正式签名：从 Secret 还原 keystore 到 app/aicode.jks，并生成 keystore.properties，
       # 与 android-release.yml 完全一致；缺任一步 beta 包会变成 unsigned。
-      - name: Restore release keystore
-        env:
-          KEYSTORE_BASE64: ${{ secrets.AICODE_KEYSTORE_BASE64 }}
+      - name: Generate self-signed keystore
         run: |
-          echo "$KEYSTORE_BASE64" | base64 -d > app/aicode.jks
-          echo "keystore restored ($(stat -c%s app/aicode.jks) bytes)"
+          keytool -genkeypair -v \
+            -keystore app/aicode.jks \
+            -storetype PKCS12 \
+            -alias siling \
+            -keyalg RSA -keysize 2048 -validity 10000 \
+            -storepass siling2026 -keypass siling2026 \
+            -dname "CN=Siling, OU=Siling, O=Siling, L=CN, ST=CN, C=CN"
+          echo "keystore generated ($(stat -c%s app/aicode.jks) bytes)"
 
       - name: Generate keystore.properties
-        env:
-          KEYSTORE_PASSWORD: ${{ secrets.AICODE_KEYSTORE_PASSWORD }}
-          KEY_ALIAS: ${{ secrets.AICODE_KEY_ALIAS }}
-          KEY_PASSWORD: ${{ secrets.AICODE_KEY_PASSWORD }}
         run: |
           cat > app/keystore.properties <<EOF
           storeFile=aicode.jks
-          storePassword=$KEYSTORE_PASSWORD
-          keyAlias=$KEY_ALIAS
-          keyPassword=$KEY_PASSWORD
+          storePassword=siling2026
+          keyAlias=siling
+          keyPassword=siling2026
           EOF
           echo "app/keystore.properties generated"
 
